@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-default-resources
+  annotations:
+    policies.kyverno.io/title: Add default resources
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Adds default CPU / memory requests and a memory limit to Pods that set
+      no requests or limits at all. Pods with any user-defined resources pass
+      through unchanged.
+spec:
+  rules:
+    - name: add-default-resources
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              operations: [CREATE]
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno]
+      preconditions:
+        all:
+          - key: >-
+              {{ request.object.spec.containers[?resources.requests ||
+              resources.limits] | length(@) }}
+            operator: Equals
+            value: 0
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "*"
+                resources:
+                  requests: {memory: 64Mi, cpu: 50m}
+                  limits: {memory: 128Mi}

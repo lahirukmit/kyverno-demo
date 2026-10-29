@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: missing-label
+  # intentionally no app label — Demo 1 should DENY this
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
